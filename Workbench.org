@@ -1,0 +1,17 @@
+﻿* Workbench使用说明
+** 运行说明
+运行环境需要 java 1.8 版本.
+
+  1. 解压 workbench.zip后, 会出现如下内容:
+    - server-0.0.1-SNAPSHOT.jar 文件
+    - Guandata_Workbench 目录
+    其中, server-*.jar文件是运行程序文件, 而Guandata_Workbench是一些自定义的配置文件. 2个文件/文件夹需要放在同一个目录
+  2. 进入命令行下运行如下命令, 来启动workbench程序
+     #+BEGIN_SRC sh
+java -jar server-0.0.1-SNAPSHOT.jar
+     #+END_SRC
+     如果机器的内存比较小(比如2G左右), 则可以加上限制JVM所用内存的参数:
+     #+BEGIN_SRC sh
+java -Xmx800m -jar server-0.0.1-SNAPSHOT.jar
+     #+END_SRC
+     本例中是限制java heap内存的最大使用量为 800 MB
