@@ -193,16 +193,100 @@ group by customer_id
 
 在运行该sql时, ${yesterday_date} 将会被替换为 2017-03-12
 
-** 3. GreenPlum 实际示例
+当然, 日期的格式也可以定制: 比如, 公司的数据库中是用的类似于 "20170312"的格式来存储的日期, 那么我们可以配置为:
+#+BEGIN_SRC javascript
+{
+  "input_parameter": {
+    "yesterday_date_short": "new org.joda.time.LocalDate().minusDays(1).toString('yyyyMMdd')"
+  }
+}
+#+END_SRC
 
-*** 3.2 配置主键
-在数据目录下, 增加该数据相关的 settings.json, 其内容是:
+那么这个参数的格式就是 "20170312"这种格式了 (唯一修改的地方是: 把日期的格式化string由 'yyyy-MM-dd' 替换为 'yyyyMMdd'
+
+** 3. GreenPlum 实际示例
+*** 3.1 定义调度的数据表
+本次我们要导入的 "每天订单分析"数据是存储在 greenplum 数据库中, 并且该数据是每天早上5点钟来更新的. 那么, 我们可以首先在 Guandata_Workbench的 greenplum 子目录下, 先创建一个 命名为 "每天订单分析" 的子目录. 因为我们的 settings.json 文件中, 已经配置了如下的"定时器":
+
+#+BEGIN_SRC javascript
+{
+  "schedule_cron": {
+    "daily_07": "0+0+5+*+*+?"
+  }
+}
+#+END_SRC
+
+那么我们在 "Guandata_Workbench/greenplum/每天订单分析" 目录下, 建立一个 daily_order_analysis.daily_07.sql 的文件: 
+#+BEGIN_SRC sql
+select order_date, customer_id, max(customer_name), sum(sales)
+from sales_orders
+where order_date = '${yesterday_date}'
+group by order_date, customer_id
+#+END_SRC
+
+对于文件名来说, "daily_order_analysis.daily_07.sql"的 "daily_order_analysis"部分不重要, 重要的是其后缀: ".daily_07.sql". 对于由 "daily_07": "0+0+5+*+*+?" 来触发的定时器, 其实现是: 当触发执行时, 自动遍历所有的以 ".daily_07.sql"结尾的sql, 并执行.
+
+*NOTE: 这一步中一定要注意"数据表"的名字不会和现有表冲突. Workbench上传数据时, 会根据"数据表"名字来判断其是否已经存在, 如果已经存在, 则只做更新操作, 不会再新建表*
+
+*** 3.2 配置主键 (去重)
+因为定时任务执行是, 每天都会更新数据, 这样就会有以下情况出现:
+  1. 对于同一个数据源, 有时候数值统计的sql有问题, 需要重新跑一下来覆盖之前的数据
+  2. 数据在每天的上传时会有叠加的部分(比如: 每天都是统计前一周的每日数据)
+
+默认不做处理时, 有可能会出现, 同样的一条数据上传了多次的情况, 造成数据统计出问题. 
+
+解决方法: 指定某些列为"主键", 这样, 如果上传了2次数据, 系统也会根据"主键"来把重复的数据"去重".  注意: 被定义为主键的列, 其值不能为NULL 或者空字符串. ( Apache Cassandra的限制)
+
+具体做法: 在数据源的表(本例中是"daily_order_analysis")目录下, 增加该数据源专有的 settings.json, 其内容是:
 #+BEGIN_SRC javascript
 {
     "table": {
-	"columns": [
-	    {"name": "lanname", "isPrimaryKey": true}
-	    ]
+        "columns": [
+            {"name": "order_date", "isPrimaryKey": true},
+            {"name": "customer_id", "isPrimaryKey": true}
+        ]
     }
 }
 #+END_SRC
+来表明, 本表中, "order_date"和"customer_id"来作为"去重"
+
+本节配置好了以后, 即使同样的sql执行多次, 其结果也不会有重复.
+
+*** 3.3 补之前的数据
+有了上面2步, 我们就可以等明天触发器调度时, 来自动导入前一天的数据了. 但是我们经常还需要把之前的一段时间的历史数据导入到系统中. 那么, 做法也很简单, 在相同目录下(本例子中为:  "Guandata_Workbench/greenplum/每天订单分析"), 新建一个 "fill_data.once.sql", 其内容是:
+
+#+BEGIN_SRC sql
+select order_date, customer_id, max(customer_name), sum(sales)
+from sales_orders
+where order_date >= '2017-01-01' and order_date <= '2017-03-12'
+group by order_date, customer_id
+#+END_SRC
+
+系统会马上把之前的数据补好
+
+*提示: 需要在输入完所有的sql后, 再保存为 .once.sql*, 因为, 系统会时时刻刻监视着这些目录下的 以".once.sql"结尾的文件, 如果发现了, 则马上会执行该sql. 如果执行完, 会把这个文件的后缀由 ".once.sql" 改为: ".once.sql_FINISHED" 或者 ".once.sql_FAILED"
+
+** 4. 导入Excel/CSV文件
+和 "3. GreenPlum 实际示例" 中类似, 在 csv/excel 子目录下, 也可以先新建一个子目录, 来代表要上传的数据Table的名字, 然后把之前的csv文件直接放到该目录下来马上导入该文件到观数
+
+** 5. FAQ
+*** FAQ 1. 如果我有多个 GreenPlum 数据库, 怎么办?
+Q: 因为 Guandata_Workbench 下的settings.json文件中, 只能配置一个 GreenPlum 数据库, 那我要是有多个数据库要导入怎么办?
+
+A: 把最常用的数据库信息放在原来的 settings.json 中, 对于其它的数据库, 在其数据表的子目录中, 比如: "Guandata_Workbench/greenplum/每天订单分析" 下的 settings.json 中, 加入以下信息 ("table"相关信息是之前就有的, 本次加入的是 greenplum 中的内容):
+#+BEGIN_SRC javascript
+{
+    "table": {
+        "columns": [
+            {"name": "order_date", "isPrimaryKey": true},
+            {"name": "customer_id", "isPrimaryKey": true}
+        ]
+    },
+    "greenplum": {
+        "url": "jdbc:postgresql://127.0.0.1:5432/new_database2",
+        "username": "__change_to_your_db_user_name__",
+        "password": "__change_to_your_db_user_password__"
+  }
+}
+#+END_SRC
+运行时, 数据表目录下的 settings.json 和 根目录下的 settings.json 会合并起来查找配置信息 (数据表下的文件优先级更高些)
