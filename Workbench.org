@@ -1,5 +1,6 @@
-﻿* Workbench使用说明
-** 运行说明
+﻿*Workbench使用说明*
+
+** 1. 运行说明
 运行环境需要 java 1.8 版本.
 
   1. 解压 workbench.zip后, 会出现如下内容:
@@ -15,3 +16,193 @@ java -jar server-0.0.1-SNAPSHOT.jar
 java -Xmx800m -jar server-0.0.1-SNAPSHOT.jar
      #+END_SRC
      本例中是限制java heap内存的最大使用量为 800 MB
+
+** 2. 配置文件说明
+在 Guandata_Workbench 根目录下,有一个配置文件: settings.json 文件, 下面将分节来介绍各个部分
+
+#+BEGIN_SRC javascript
+{
+  "guandata": {
+    "homeUrl": "http://115.159.29.97:9000",
+    "domain": "demo1",
+    "email": "__change_to_your_guandata_email__",
+    "password": "__change_to_your_guandata_passwod__"
+  },
+  "input_parameter": {
+    "today_date": "new org.joda.time.LocalDate().toString('yyyy-MM-dd')",
+    "yesterday_date": "new org.joda.time.LocalDate().minusDays(1).toString('yyyy-MM-dd')"
+  },
+  "schedule_cron": {
+    "daily": "0+0+5+*+*+?"
+  },
+  "mysql": {
+    /*Database Driver class, noramlly this is not changed*/
+    "driverClassName": "com.mysql.jdbc.Driver",
+    /*url can also pass in some config parameters*/
+    "url": "jdbc:mysql://127.0.0.1:3306/your_db_name?verifyServerCertificate=false&useSSL=true",
+    "username": "__change_to_your_db_user_name__",
+    "password": "__change_to_your_db_user_password__",
+    /*还可以继续添加数据库支持的其它配置property*/
+    "defaultFetchSize": "5000",
+    "useCursorFetch": "true"
+  },
+  "postgresql": {
+    "driverClassName": "org.postgresql.Driver",
+    "url": "jdbc:postgresql://127.0.0.1:5432/postgres",
+    "username": "__change_to_your_db_user_name__",
+    "password": "__change_to_your_db_user_password__"
+  },
+  "greenplum": {
+    "driverClassName": "org.postgresql.Driver",
+    "url": "jdbc:postgresql://127.0.0.1:5432/postgres",
+    "username": "__change_to_your_db_user_name__",
+    "password": "__change_to_your_db_user_password__"
+  }
+}
+#+END_SRC
+
+Note: 我们在JSON的基础上加入了 "注释"支持: 可以把注释写在 /* */ 中. 其它的应该都是标准JSON. 所以, 需要额外注意该配置文件写的是否合法JSON:
+  1. 当JSON中的参数是数组时, 注意最后一个元素后面不能有多余的逗号, 比如:
+     #+BEGIN_SRC javascript
+["a1", "a2", "a3",]
+     #+END_SRC
+     这时, a3 后面的逗号会导致文件出错
+  2. 当JSON的参数是Object时, 最后一个元素后面也不能有多余的逗号, 比如:
+     #+BEGIN_SRC javascript
+{
+    "key1": "value1",
+    "key2": "value2",
+    "key3": "value3",
+}
+     #+END_SRC
+     这里的 value3 后面的多余的逗号, 也会导致出错.
+
+*Note*: 目前主要是因为我们底层使用的 jackson 库: https://github.com/FasterXML/jackson 还不支持这些 "Trailing_Comma", 但是在其下一个版本(2.9)中, 将会支持, 到时我们就不会有上面的这么容易出错的2个"多余的逗号"的问题了
+
+*** 2.1 guandata 部分
+本部分是配置文件中的:
+#+BEGIN_SRC javascript
+{
+  "guandata": {
+    "homeUrl": "http://115.159.29.97:9000",
+    "domain": "demo1",
+    "email": "__change_to_your_guandata_email__",
+    "password": "__change_to_your_guandata_passwod__"
+  }
+}
+#+END_SRC
+
+主要是用户在观数的登陆信息:
+  - homeUrl: 观数平台的API地址, 一般用户不需要改变
+  - domain: 观数上的"公司域名"
+  - email: 观数上登陆的email名字
+  - password: 观数上该用户的密码
+
+这里是基本信息, 比较重要的一点是: 输入的用户需要具有"管理员权限", 否则, 会导致无法创建data source
+
+*** 2.2 JDBC数据源部分
+本部分是数据库相关部分. 目前主要支持3种数据库 (如果用户有其它jdbc数据库的需要, 我们可以快速添加):
+  - mysql
+  - postgresql
+  - greenplum
+
+每一个都对应于配置文件中的一小块, 比如: greenplum数据库:
+#+BEGIN_SRC javascript
+{
+  "greenplum": {
+    "driverClassName": "org.postgresql.Driver",
+    "url": "jdbc:postgresql://127.0.0.1:5432/postgres",
+    "username": "__change_to_your_db_user_name__",
+    "password": "__change_to_your_db_user_password__"
+  }
+}
+#+END_SRC
+
+其中:
+  - driverClassName: jdbc driver中的java类名, 一般无需修改
+  - url: 数据库的链接地址
+  - username: 数据库的用户名
+  - password: 数据库的密码
+
+*** 2.3 定时调度
+对于JDBC数据源, 我们一般都是配置为定时任务, 每天夜里导入前一天的数据. 那么需要我们自定义"定时任务".
+
+*NOTE*: 本程序中假设客户的机器上的时区已经设置为正确的本地时间, 比如: 对于中国的公司, 一般机器上都设置为了"北京时间", 以及的定时任务配置时, 就是采用的机器的本地时间
+
+对应于配置文件中的"schedule_cron"部分
+#+BEGIN_SRC javascript
+{
+  "schedule_cron": {
+    "daily": "0+0+5+*+*+?"
+  }
+}
+#+END_SRC
+
+本例中只展示了 1个定时出发器, 其名字是"daily", 而其调度时间为: 0+0+5+*+*+?  代表着: 每天凌晨5点触发一次.
+
+其中"0+0+5+*+*+?"的语法是类似于CRON任务的一种写法, 具体可以参考: http://camel.apache.org/quartz2.html 
+
+当然, 定时的需求很多, 用户可以再额外自定义自己的任务的触发时间, 比如:
+
+#+BEGIN_SRC javascript
+{
+  "schedule_cron": {
+    "daily": "0+0+7+*+*+?",
+    "daily_noon": "0+10+12+*+*+?",
+    "hourly": "0+10+*+*+*+?",
+    "weekly": "0+10+5+?+*+MON"
+  }
+}
+#+END_SRC
+
+则建了如下的时间触发器:
+  1. daily, 改为每天7点执行
+  2. daily_noon, 改为每天中午12:10执行
+  3. hourly, 每小时的10分钟时执行 (触发次数会比较多, 需要谨慎配置)
+  4. weekly, 每周一的早上5:10执行
+
+具体的使用方法请参考下面的案例
+
+*** 2.4 SQL模板中需要的输入参数
+对于JDBC数据源, 我们有了"定时调度", 但是有个问题, 每天的sql是跟时间有关的, 我们怎么才能配置每天导入的数据不一样呢? 这时, 需要我们的 "input_parameter"
+
+#+BEGIN_SRC javascript
+{
+  "input_parameter": {
+    "today_date": "new org.joda.time.LocalDate().toString('yyyy-MM-dd')",
+    "yesterday_date": "new org.joda.time.LocalDate().minusDays(1).toString('yyyy-MM-dd')"
+  }
+}
+#+END_SRC
+
+这些参数也是自定义的. 比如: 本例子中, 我们定义了2个时间相关的模板参数:
+  - today_date
+  - yesterday_date
+
+比如: 今天是 2017年3月13日, 那么这两个参数的值将会自动算为:
+  - today_date 为:  2017-03-13
+  - yesterday_date 为: 2017-03-12
+
+这个时候, 在SQL文件中, 我们只需要配置为如下SQL
+#+BEGIN_SRC sql
+select customer_id, max(customer_name), sum(sales)
+from sales_orders
+where order_date = '${yesterday_date}'
+group by customer_id
+#+END_SRC
+
+在运行该sql时, ${yesterday_date} 将会被替换为 2017-03-12
+
+** 3. GreenPlum 实际示例
+
+*** 3.2 配置主键
+在数据目录下, 增加该数据相关的 settings.json, 其内容是:
+#+BEGIN_SRC javascript
+{
+    "table": {
+	"columns": [
+	    {"name": "lanname", "isPrimaryKey": true}
+	    ]
+    }
+}
+#+END_SRC
