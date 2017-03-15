@@ -23,7 +23,7 @@ java -Xmx800m -jar server-0.0.1-SNAPSHOT.jar
 #+BEGIN_SRC javascript
 {
   "guandata": {
-    "homeUrl": "http://115.159.29.97:9000",
+    "homeUrl": "http://115.159.129.58:9000",
     "domain": "demo1",
     "email": "__change_to_your_guandata_email__",
     "password": "__change_to_your_guandata_passwod__"
@@ -84,7 +84,7 @@ Note: 我们在JSON的基础上加入了 "注释"支持: 可以把注释写在 /
 #+BEGIN_SRC javascript
 {
   "guandata": {
-    "homeUrl": "http://115.159.29.97:9000",
+    "homeUrl": "http://115.159.129.58:9000",
     "domain": "demo1",
     "email": "__change_to_your_guandata_email__",
     "password": "__change_to_your_guandata_passwod__"
