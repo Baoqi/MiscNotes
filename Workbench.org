@@ -278,7 +278,7 @@ group by order_date, customer_id
   2. 马上执行的任务是  your_card_id.once.card  文件, 文件内容为空就行.  需要把 `your_card_id` 替换为你的已经存在的card
   3. 对于定时调度. 可能需要配置另一个 schedule trigger, 比如: 原始一般导入文件都是 "daily" 这个trigger下(比如: 早上5点调度).  则可以新建一个trigger "daily_plus_1_hour", 让其在6点钟执行, 所以, 这时, 实际的空文件名字为:   your_card_id.daily_plus_1_hour.card
 
-** 5. FAQ
+** 6. FAQ
 *** FAQ 1. 如果我有多个 GreenPlum 数据库, 怎么办?
 Q: 因为 Guandata_Workbench 下的settings.json文件中, 只能配置一个 GreenPlum 数据库, 那我要是有多个数据库要导入怎么办?
 
