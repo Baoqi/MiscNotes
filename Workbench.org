@@ -266,6 +266,22 @@ group by order_date, customer_id
 
 *提示: 需要在输入完所有的sql后, 再保存为 .once.sql*, 因为, 系统会时时刻刻监视着这些目录下的 以".once.sql"结尾的文件, 如果发现了, 则马上会执行该sql. 如果执行完, 会把这个文件的后缀由 ".once.sql" 改为: ".once.sql_FINISHED" 或者 ".once.sql_FAILED"
 
+*** 3.4 上传时全量覆盖之前的数据 (请小心操作)
+有的时候, 我们需要在本次上传数据前, 提前清空掉之前的数据, 而用本次上传的数据全量覆盖 (类似于sql中的 truncate table, 但是table本身的schema是不会变化的)
+
+这时, 需要对于该表的settings.json中增加一个 overwriteExistingData 参数
+#+BEGIN_SRC javascript
+{
+    "table": {
+        "columns": [
+            {"name": "order_date", "isPrimaryKey": true},
+            {"name": "customer_id", "isPrimaryKey": true}
+        ],
+        "overwriteExistingData": true
+    }
+}
+#+END_SRC
+
 ** 4. 导入Excel/CSV文件
 和 "3. GreenPlum 实际示例" 中类似, 在 csv/excel 子目录下, 也可以先新建一个子目录, 来代表要上传的数据Table的名字, 然后把之前的csv文件直接放到该目录下来马上导入该文件到观数
 ** 5. 用Card内容作为数据源
