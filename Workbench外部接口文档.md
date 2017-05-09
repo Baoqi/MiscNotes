@@ -40,7 +40,7 @@ header:
 
 body参数二选一
 
-body参数类型1:    上传时指定参数dsId，表示更新指定的观数的数据集。
+* body参数类型1:    上传时指定参数dsId，表示更新指定的观数的数据集。
 
 ```json
 {
@@ -60,16 +60,18 @@ body参数类型1:    上传时指定参数dsId，表示更新指定的观数的
 }
 ```
 
-body参数类型2: 传tableName
+* body参数类型2: 传tableName
 
 ```json
 {
   "tableName": "my_table_name",        // 必选
   "overwriteExistingData": false,      // 可选，默认为false，设置为true时，先删除原来的数据，再上传。仅在设置dsId时有效
-  "columns": [                         // 可选，设置各字段，设置了primaryKey后，多次上传时会更新原有数据，否则，会追加到原有数据后
+  "columns": [                         // 可选，设置各字段
     {
       "name": "column1",
-      "isPrimaryKey": true             // 设置主键
+      "isPrimaryKey": true,            // 可选，默认为false，设置主键，设置了primaryKey后，多次上传时会更新原有数据，否则，会追加到原有数据后
+      "isPartitionKey": false,         // 可选，默认为false，设置分区键
+      "isEncrypt": false               // 可选，默认为false，设置是否加密
     }
   ],
   "allColumnsSpecified": false,        // 可选，默认false。为false时，会自动检查data中的字段并推测类型上传到观数，为true时，表示columns中指定了所有字段，那么，data中的多余字段会过滤掉。
