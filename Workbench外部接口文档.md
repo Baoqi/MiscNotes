@@ -33,7 +33,7 @@ body:
 }
 ```
 
-
+注意：参数中password需要base64 encode。
 
 ## 2. 上传数据
 
