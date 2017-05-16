@@ -12,7 +12,7 @@ home_url: guandata.com:8088（注：近期会迁移到https，到时home_url可�
 
 header:
 
-* Content-Type: application/json
+* Content-Type: application/json; charset=utf-8
 
 body:
 
@@ -46,7 +46,7 @@ body:
 header:
 
 * X-Auth-Token:  $token (通过登录接口获取)    // 必选
-* Content-Type: application/json
+* Content-Type: application/json; charset=utf-8
 
 body:
 
