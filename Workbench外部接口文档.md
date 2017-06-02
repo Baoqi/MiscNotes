@@ -59,7 +59,8 @@ body:
   "columns": [                         /* 可选，设置各字段 */
     {
       "name": "column1",
-      "isPrimaryKey": true             /* 可选，默认为false，设置主键，设置了primaryKey后，多次上传时会更新原有数据，否则，会追加到原有数据后 */
+      "type": "string",                /* 可选, 如果没有设置, 则系统会自动读取前1000行来推测其列的数据类型,  string, integer, double, timestamp, long, short, float, date */
+      "isPrimaryKey": true             /* 可选，默认为false，设置主键，设置了primaryKey后，多次上传时会更新原有数据，否则，会追加到原有数据后 */
     }
   ],
   "allColumnsSpecified": false,        /* 可选，默认false。为false时，会自动检查data中的字段并推测类型上传到观数，为true时，表示columns中指定了所有字段，那么，data中的多余字段会过滤掉。 */
