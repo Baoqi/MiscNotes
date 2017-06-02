@@ -1,10 +1,10 @@
 # Workbench 对外接口文档
 
-home_url: guandata.com:8088（注：近期会迁移到https，到时home_url可能需要发生变更）
+home_url: https://app.guandata.com
 
 ## 1. 登录
 
-**url**: $home_url/api/public-api/sign-in
+**url**: $home_url/public-api/sign-in
 
 **method**: POST
 
@@ -13,6 +13,8 @@ home_url: guandata.com:8088（注：近期会迁移到https，到时home_url可�
 header:
 
 * Content-Type: application/json; charset=utf-8
+
+注意：参数中password需要base64 encode。
 
 body:
 
@@ -37,7 +39,7 @@ body:
 
 ## 2. 上传数据
 
-**url**: $home_url/api/public-api/upload-dataset
+**url**: $home_url/public-api/upload-dataset
 
 **method**: POST
 
