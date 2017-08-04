@@ -54,7 +54,7 @@ body:
 
 ```json
 {
-  "tableName": "my_table_name",        /* 必选 */
+  "tableName": "my_table_name",        /* 必选，如果需要向已存在数据集追加数据，设置相同的tableName即可。*/
   "overwriteExistingData": false,      /* 可选，默认为false，设置为true时，先删除原来的数据，再上传。*/
   "columns": [                         /* 可选，设置各字段 */
     {
